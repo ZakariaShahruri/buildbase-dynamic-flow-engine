@@ -7,18 +7,18 @@ const router = useRouter();
 
 const steps = ref<Process[]>([
   {
-    id: 1,
+    id: '1',
     name: "",
     type: "",
     role: "",
     description: "",
   },
 ]);
-let nextStepId = 2;
+let nextStepId = "2";
 
 const addNextStep = () => {
   steps.value.push({
-    id: nextStepId++,
+    id: (Number(nextStepId) + 1).toString(),
     name: "",
     type: "",
     role: "",
@@ -26,7 +26,7 @@ const addNextStep = () => {
   });
 };
 
-const deleteStep = (stepId: number) => {
+const deleteStep = (stepId: string) => {
   if (steps.value.length > 1) {
     steps.value = steps.value.filter((step) => step.id !== stepId);
   }
@@ -35,12 +35,11 @@ const deleteStep = (stepId: number) => {
 const goBackToFlowDef = () => {
   router.push("/flow-definitions");
 };
-
 </script>
 
 <template>
   <div class="w-full max-w-4xl mx-auto">
-    <div class="rounded-md border bg-white p-5">
+    <div class="rounded-md border bg-white p-5 border-gray-300 shadow-sm">
       <h1 class="font-extrabold text-4xl pt-5">Create New Flow Definition</h1>
 
       <button

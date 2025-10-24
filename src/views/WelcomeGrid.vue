@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import NotificationBar from "../components/NotificationBar.vue";
+
 const gridElements = [
   "Flow Definitions",
   "Flow Instances",
@@ -8,8 +10,10 @@ const gridElements = [
 </script>
 
 <template>
+  <NotificationBar />
+
   <div class="w-full p-5 rounded-md">
-    <div class="rounded-lg border bg-white p-6">
+    <div class="rounded-lg border border-gray-300 bg-white p-6 shadow-sm">
       <p class="font-bold text-center text-[2rem] pb-5">Welcome Manager</p>
       <div class="grid grid-cols-2 gap-4">
         <div
