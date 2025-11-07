@@ -1,7 +1,7 @@
 package be.ucll.controller;
 
-import java.util.HashMap;
-import java.util.Map;
+import be.ucll.model.FlowInstance;
+import be.ucll.service.FlowInstanceService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,14 +12,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 @RestController
-@RequestMapping("/")
+@RequestMapping("/flowInstance")
 @CrossOrigin(origins = "*")
-public class StatusController {
+public class FlowInstanceController {
+
+    private final FlowInstanceService flowInstanceService;
+
+    public FlowInstanceController(FlowInstanceService flowInstanceService) {
+        this.flowInstanceService = flowInstanceService;
+    }
 
     @GetMapping
-    public String getStatus() {
-        return "Server is Running";
+    public List<FlowInstance> findAllFlowInstances() {
+        return flowInstanceService.findAllFlowInstances();
     }
 
     @ExceptionHandler(RuntimeException.class)
