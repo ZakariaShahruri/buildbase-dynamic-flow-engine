@@ -3,16 +3,14 @@ import FlowDefinitionsTable from "./FlowDefinitionsTable.vue";
 import FlowInstancesTable from "./FlowInstancesTable.vue";
 
 const props = defineProps(["isDefinition"]);
-
-
 </script>
 
 <template>
   <div class="w-full rounded-md p-5">
     <div class="rounded-lg border bg-white p-6 border-gray-300 shadow-sm">
-      <h1 class="font-extrabold text-4xl py-5">
+      <h2 class="font-bold text-4xl py-5">
         {{ isDefinition ? "Flow Definitions: " : "Flow Instances: " }}
-      </h1>
+      </h2>
 
       <div class="flex items-center justify-between mb-3 gap-4">
         <div class="relative flex-1 max-w-md">
@@ -38,10 +36,10 @@ const props = defineProps(["isDefinition"]);
 
         <RouterLink v-if="isDefinition" to="/flow-definitions/new">
           <button
-            class="rounded-md px-4 py-1 bg-yellow-500 text-sm font-medium border cursor-pointer hover:bg-yellow-600 flex items-center gap-2"
+            class="rounded-md px-4 py-1 bg-yellow-500 text-sm font-medium cursor-pointer hover:bg-yellow-600 flex items-center gap-2"
           >
             <svg
-              class="w-4 h-4"
+              class="w-4 h-4 text-gray-800"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -53,7 +51,7 @@ const props = defineProps(["isDefinition"]);
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            <span>New flow</span>
+            <span class="text-gray-800">New flow</span>
           </button>
         </RouterLink>
       </div>
