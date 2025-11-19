@@ -1,35 +1,53 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import type { Process } from "../types";
-import ProcessSelection from "../components/Process.vue";
+import FlowDefinitionService from "../../services/FlowDefinitionService";
+import Process from "../main/Process.vue";
+import FlowDiagram from "./FlowDiagram.vue";
 
 const router = useRouter();
 
-const steps = ref<Process[]>([]);
-
-let nextStepId = "1";
+const flowName = ref("");
+const description = ref("");
+const steps = ref<any[]>([]);
 const showProcessMenu = ref(false);
 
+let nextStepId = "1";
+
 const addProcess = (type: string) => {
-  steps.value.push({
-    id: nextStepId, // use the current id
-    type: type,
-    title: "",
-  });
+  steps.value.push({ id: nextStepId, type, subtype: null });
   nextStepId = (Number(nextStepId) + 1).toString();
   showProcessMenu.value = false;
 };
 
-const deleteStep = (stepId: string) => {
-  if (steps.value.length > 0) {
-    steps.value = steps.value.filter((step) => step.id !== stepId);
+const deleteStep = (id: string) => {
+  steps.value = steps.value.filter((s) => s.id !== id);
+};
+
+const updateStep = (stepId: string, updates: any) => {
+  const stepIndex = steps.value.findIndex((s) => s.id === stepId);
+  if (stepIndex !== -1) {
+    steps.value[stepIndex] = { ...steps.value[stepIndex], ...updates };
   }
 };
 
-const goBackToFlowDef = () => {
+const saveFlow = async () => {
+  const payload = {
+    title: flowName.value,
+    description: description.value,
+    trigger: "MANUAL",
+    processes: steps.value.map((step) => ({
+      id: step.id,
+      title: step.type,
+      createdAt: new Date().toISOString().split("T")[0],
+    })),
+  };
+
+  await FlowDefinitionService.addNewFlowDefinition(payload);
   router.push("/flow-definitions");
 };
+
+const goBackToFlowDef = () => router.back();
 </script>
 
 <template>
@@ -54,7 +72,7 @@ const goBackToFlowDef = () => {
             d="M15 19l-7-7 7-7"
           />
         </svg>
-        <span>Return to Flow Definitions</span>
+        <span>Return</span>
       </button>
 
       <p class="font-bold">Basic Information</p>
@@ -71,6 +89,7 @@ const goBackToFlowDef = () => {
             <input
               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               id="flowName"
+              v-model="flowName"
               type="text"
               placeholder="Enter flow name"
             />
@@ -86,6 +105,7 @@ const goBackToFlowDef = () => {
           <textarea
             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="description"
+            v-model="description"
             rows="4"
             placeholder="Describe what this flow does"
           ></textarea>
@@ -129,8 +149,9 @@ const goBackToFlowDef = () => {
             </button>
           </div>
 
-          <ProcessSelection
+          <Process
             :step="step"
+            @update-step="(updates) => updateStep(step.id, updates)"
           />
         </div>
       </div>
@@ -157,12 +178,26 @@ const goBackToFlowDef = () => {
           >
             Notification Process
           </button>
-                    <button
+          <button
             @click="addProcess('Request')"
             class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-yellow-100 transition-colors cursor-pointer"
           >
             Request Process
           </button>
+        </div>
+
+        <div v-if="steps.length > 0" class="mt-8 mb-6">
+          <p class="font-bold mb-3">Flow Preview</p>
+          <FlowDiagram
+            :processes="
+              steps.map((step) => ({
+                id: step.id,
+                type: step.type || step.subtype,
+                title: step.subtype || step.type,
+              }))
+            "
+            :interactive="true"
+          />
         </div>
       </div>
 
@@ -182,6 +217,7 @@ const goBackToFlowDef = () => {
           Save as Draft
         </button>
         <button
+          @click="saveFlow"
           type="button"
           class="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold py-2 px-6 border border-yellow-600 rounded-md shadow-sm transition-colors cursor-pointer"
         >

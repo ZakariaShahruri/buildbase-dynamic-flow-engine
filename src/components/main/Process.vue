@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, watch } from "vue";
-import type { Process } from "../types";
+import type { Process } from "../../types";
 
 const props = defineProps<{
   step: Process;
@@ -34,17 +34,18 @@ watch(
 <template>
      <div>
     <div>
-      <label class="block text-gray-700 text-sm font-bold mb-2">
+      <label for="step-type" class="block text-gray-700 text-sm font-bold mb-2">
         {{ step.type }} Type
       </label>
       <select
+        id="step-type"
         v-model="local.type"
         class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 bg-white leading-tight focus:outline-none focus:shadow-outline cursor-pointer"
       >
           <option disabled>Select {{ step.type }} type</option>
-          <option v-if="step.type=='Notification'" value="email">Email</option>
-          <option v-if="step.type=='Notification'" value="popup">Popup</option>
-          <option v-if="step.type=='Request'"value="absence">Absence</option>
+          <option v-if="step.type=='Notification'" value="Email">Email</option>
+          <option v-if="step.type=='Notification'" value="Popup">Popup</option>
+          <option v-if="step.type=='Request'" value="Absence">Absence</option>
       </select>
     </div>
 

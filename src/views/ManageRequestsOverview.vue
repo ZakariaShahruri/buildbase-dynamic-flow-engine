@@ -1,12 +1,7 @@
 <script setup lang="ts">
-    import { onMounted } from 'vue';
-import ManageRequests from '../components/ManageRequests.vue';
-
-    onMounted(()=>{
-        
-    });
+  import ManageRequests from '../components/requests/ManageRequests.vue';
 </script>
 
 <template>
-    <ManageRequests />
+  <ManageRequests />
 </template>
