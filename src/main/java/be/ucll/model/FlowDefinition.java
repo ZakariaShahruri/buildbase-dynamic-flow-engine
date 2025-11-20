@@ -18,7 +18,7 @@ import jakarta.validation.constraints.NotEmpty;
 public class FlowDefinition {
 
     @Id
-    private ObjectId id;
+    private String id;
     @NotBlank
     private String title;
     @NotBlank
@@ -26,18 +26,14 @@ public class FlowDefinition {
     @NotEmpty
     @DBRef
     private List<Process> processes;
-    @NotEmpty
-    private Trigger trigger;
 
-    private List<FlowInstance> flowInstances = new ArrayList<FlowInstance>();;
     private LocalDate updatedAt;
 
-    public FlowDefinition(String title, String description, List<Process> processes, Trigger trigger) {
+    public FlowDefinition(String title, String description, List<Process> processes) {
         setTitle(title);
         setDescription(description);
         setProcesses(processes);
         setUpdatedAt(LocalDate.now());
-        setTrigger(trigger);
     }
 
     public void setUpdatedAt(LocalDate updatedAt) {
@@ -60,19 +56,12 @@ public class FlowDefinition {
         return processes;
     }
 
-    public List<FlowInstance> getFlowInstances() {
-        return flowInstances;
-    }
-
-    public Trigger getTrigger() {
-        return trigger;
-    }
-
     public LocalDate getCreatedAt() {
+
         if (id == null) 
             throw new DomainException("Flow Definition not yet Created");
 
-        return id.getDate()
+        return new ObjectId(id).getDate()
             .toInstant()
             .atZone(ZoneOffset.UTC)
             .toLocalDate();
@@ -92,13 +81,5 @@ public class FlowDefinition {
 
     public void setProcesses(List<Process> processes) {
         this.processes = processes;
-    }
-
-    public void setFlowInstances(List<FlowInstance> flowInstances) {
-        this.flowInstances = flowInstances;
-    }
-
-    public void setTrigger(Trigger trigger) {
-        this.trigger = trigger;
     }
 }
