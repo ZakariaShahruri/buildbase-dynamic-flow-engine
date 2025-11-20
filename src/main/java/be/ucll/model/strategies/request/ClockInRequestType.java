@@ -5,7 +5,7 @@ import be.ucll.model.*;
 
 import java.time.LocalDate;
 
-public class AbsenceRequestType implements RequestType {
+public class ClockInRequestType implements RequestType {
     
     @Override
     public void validate(RequestData data) {
@@ -36,6 +36,6 @@ public class AbsenceRequestType implements RequestType {
     
     @Override
     public String getTypeName() {
-        return "ABSENCE_REQUEST";
+        return "CLOCKIN_REQUEST";
     }
 }
