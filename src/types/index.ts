@@ -15,7 +15,7 @@ export type FlowInstance = {
   id: string;
   flowDefinition: FlowDefinition;
   title: string;
-  status: Status;
+  flowStatus: Status;
   currentProcess: Process;
   updatedAt: Date;
 };
@@ -29,8 +29,8 @@ export type Trigger = {
 
 export type Process = {
   id: string;
-  type: string;
-  title: string;
+  processType: string;
+  name: string;
 };
 
 export type AbsenceData = {
@@ -55,10 +55,5 @@ export type RequestSubmission = {
 export type FlowDefinitionPayload = {
   title: string;
   description: string;
-  processes: {
-    id: string;
-    title: string;
-    createdAt: string | undefined;
-  }[];
-  trigger: string;
+  processes: string[];
 };

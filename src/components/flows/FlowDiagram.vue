@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
-import { VueFlow, useVueFlow } from "@vue-flow/core";
+import { VueFlow, useVueFlow, MarkerType } from "@vue-flow/core";
 import type { Process } from "../../types";
 
 const props = withDefaults(
@@ -9,7 +9,7 @@ const props = withDefaults(
     interactive?: boolean;
   }>(),
   {
-    interactive: false,
+    interactive: true,
   }
 );
 
@@ -28,10 +28,10 @@ const nodes = computed(() => {
       return;
     }
 
-    // it should change after backend processes update
-    const nodeId = process.id || `process-${index}`;
-    const label = (process as any).name || process.title || "Unnamed Process";
-    const processType = (process as any).processType || process.type;
+    // we can simplify at the end
+    const nodeId = `process-${index}-${process.id || index}`;
+    const label = (process as any).name || process.name || "Unnamed Process";
+    const processType = (process as any).processType || process.name;
 
     const isFirst = index === 0;
     const isLast = index === props.processes.length - 1;
@@ -63,14 +63,15 @@ const edges = computed(() => {
       continue;
     }
 
-    const currentId = currentProcess.id || `process-${i}`; // it should change after backend processes update
-    const nextId = nextProcess.id || `process-${i + 1}`;
+    const currentId = `process-${i}-${currentProcess.id || i}`;
+    const nextId = `process-${i + 1}-${nextProcess.id || i + 1}`;
 
     result.push({
       id: `e-${currentId}-${nextId}`,
       source: currentId,
       target: nextId,
-      type: "straight",
+      type: "smoothstep",
+      markerEnd: { type: MarkerType.ArrowClosed, color: "#6b7280" },
     });
   }
 
@@ -99,7 +100,7 @@ watch([nodes, edges], ([newNodes, newEdges]) => {
     <VueFlow
       :nodes="vueFlowNodes"
       :edges="vueFlowEdges"
-      :nodes-draggable="false"
+      :nodes-draggable="true"
       :zoom-on-scroll="interactive"
       :pan-on-scroll="interactive"
       :pan-on-drag="interactive"
@@ -114,7 +115,7 @@ watch([nodes, edges], ([newNodes, newEdges]) => {
 <style scoped>
 .flow-diagram-container {
   width: 100%;
-  height: 400px;
+  height: 300px;
   border: 1px solid #e5e7eb;
   border-radius: 0.375rem;
   background-color: #fafafa;
@@ -173,8 +174,9 @@ watch([nodes, edges], ([newNodes, newEdges]) => {
   stroke: #6b7280;
 }
 
-.vue-flow__arrowhead {
-  fill: #6b7280;
+.vue-flow__handle {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .vue-flow__background {
