@@ -1,16 +1,11 @@
 package be.ucll.service;
 
 import be.ucll.exception.ServiceException;
-import be.ucll.model.FlowDefinition;
-import be.ucll.model.FlowInstance;
-import be.ucll.model.FlowStatus;
-import be.ucll.model.Notification;
+import be.ucll.model.*;
 import be.ucll.model.Process;
-import be.ucll.model.Request;
 import be.ucll.repository.FlowDefinitionRepository;
 import be.ucll.repository.FlowInstanceRepository;
 
-import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -47,7 +42,8 @@ public class FlowRunnerService {
 
                 if(current instanceof Request){
                     requestService.processRequest(flowInstance,  (Request) current, data);
-                    pauseFlow(flowInstance);
+                }else if(current instanceof Approval){
+                    updateFlow(flowInstance, FlowStatus.PENDING);
                     return;
                 }else if (current instanceof Notification) {
                     // Notify in NotificationService
@@ -55,27 +51,19 @@ public class FlowRunnerService {
 
                 flowInstance.nextProcess();
                 flowInstance.setUpdatedAt(LocalDate.now());
-                flowInstance = flowInstanceRepository.save(flowInstance);
+                flowInstanceRepository.save(flowInstance);
             }
 
             flowInstance.setFlowStatus(FlowStatus.SUCCESS);
             flowInstanceRepository.save(flowInstance);
 
         } catch(Exception e) {
-            flowInstance.setFlowStatus(FlowStatus.FAILURE);
-            flowInstance.setUpdatedAt(LocalDate.now());
-            flowInstanceRepository.save(flowInstance);
+            updateFlow(flowInstance, FlowStatus.FAILURE);
             throw new ServiceException("Flow Execution Failed: "+ e.getMessage());
         }
     }
 
-    public void pauseFlow(FlowInstance flowInstance){
-        flowInstance.setFlowStatus(FlowStatus.PENDING);
-        flowInstance.setUpdatedAt(LocalDate.now());
-        flowInstanceRepository.save(flowInstance);
-    }
-
-    public void resumeFlow(ObjectId id){
+    public void resumeFlow(String id){
         FlowInstance flowInstance = flowInstanceRepository.findById(id)
             .orElseThrow(()-> new ServiceException("Flow Instance not found"));
 
@@ -86,7 +74,12 @@ public class FlowRunnerService {
         flowInstance.nextProcess();
         flowInstance.setFlowStatus(FlowStatus.ACTIVE);
         flowInstance.setUpdatedAt(LocalDate.now());
-        flowInstance = flowInstanceRepository.save(flowInstance);
-        runFlow(flowInstance, Map.of());
+        flowInstance = flowInstanceRepository.save(flowInstance); runFlow(flowInstance, Map.of());
+    }
+
+    private void updateFlow(FlowInstance flowInstance, FlowStatus status){
+        flowInstance.setFlowStatus(status);
+        flowInstance.setUpdatedAt(LocalDate.now());
+        flowInstanceRepository.save(flowInstance);
     }
 }
