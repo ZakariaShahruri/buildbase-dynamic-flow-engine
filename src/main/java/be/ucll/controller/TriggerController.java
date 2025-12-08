@@ -14,18 +14,23 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 
+import be.ucll.controller.dto.FlowData;
 import be.ucll.service.FlowRunnerService;
 
 @RestController
 @RequestMapping("/trigger")
 public class TriggerController {
     
-    @Autowired
     private FlowRunnerService flowRunnerService;
 
-    @PostMapping("/{title}")
-    public void triggerFlow(@PathVariable String title, @RequestBody Map<String, Object> data){
-        flowRunnerService.instantiateFlow(title, data); 
+    @Autowired
+    public TriggerController(FlowRunnerService flowRunnerService){
+        this.flowRunnerService = flowRunnerService;
+    }
+
+    @PostMapping("/{id}")
+    public void triggerFlow(@PathVariable String id, @RequestBody FlowData flowData){
+        flowRunnerService.instantiateFlow(id, flowData); 
     }
 
     @ExceptionHandler(RuntimeException.class)

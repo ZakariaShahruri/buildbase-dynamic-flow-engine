@@ -3,10 +3,13 @@ package be.ucll.controller;
 import be.ucll.model.FlowInstance;
 import be.ucll.service.FlowInstanceService;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
@@ -21,6 +24,7 @@ public class FlowInstanceController {
 
     private final FlowInstanceService flowInstanceService;
 
+    @Autowired
     public FlowInstanceController(FlowInstanceService flowInstanceService) {
         this.flowInstanceService = flowInstanceService;
     }
@@ -28,6 +32,17 @@ public class FlowInstanceController {
     @GetMapping
     public List<FlowInstance> findAllFlowInstances() {
         return flowInstanceService.findAllFlowInstances();
+    }
+
+    @GetMapping("/{id}")
+    public FlowInstance findFlowInstanceById(@PathVariable String id) {
+        return flowInstanceService.findFlowInstanceById(id);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteFlowInstanceById(@PathVariable String id) {
+        flowInstanceService.deleteFlowInstanceById(id);
+        return ResponseEntity.noContent().build();
     }
 
     @ExceptionHandler(RuntimeException.class)

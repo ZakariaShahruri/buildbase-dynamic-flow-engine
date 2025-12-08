@@ -18,6 +18,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/flowDefinition")
 public class FlowDefinitionController {
+
     private FlowDefinitionService flowDefinitionService;
 
     @Autowired
@@ -30,14 +31,25 @@ public class FlowDefinitionController {
         return flowDefinitionService.findAllFlowDefinitions();
     }
 
+    @GetMapping("/{id}")
+    public FlowDefinition findFlowDefinitionById(@PathVariable String id) {
+        return flowDefinitionService.findFlowDefinitionById(id);
+    }
+
     @PostMapping
     public FlowDefinition addFlowDefinition(@RequestBody @Valid FlowDefinitionInput input) {
         return flowDefinitionService.addFlowDefinition(input);
     }
 
-    @PutMapping("/flowDefinition/{id}")
-    public FlowDefinition updateFlowDefinition(@RequestBody FlowDefinitionInput updatedFlowDefinition, @PathVariable String id) {
+    @PutMapping("/{id}")
+    public FlowDefinition updateFlowDefinition(@RequestBody @Valid FlowDefinitionInput updatedFlowDefinition, @PathVariable String id) {
         return flowDefinitionService.updateFlowDefinition(updatedFlowDefinition, id);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteFlowDefinition(@PathVariable String id) {
+        flowDefinitionService.deleteFlowDefinition(id);
+        return ResponseEntity.noContent().build();
     }
 
     @ExceptionHandler(RuntimeException.class)
