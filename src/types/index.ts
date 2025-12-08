@@ -1,36 +1,58 @@
+export type TriggerType = "MANUAL" | "POST";
+export type Status = "PENDING" | "ACTIVE" | "SUCCESS" | "FAILURE" | "PAUSED";
+export type ProcessType = "REQUEST" | "NOTIFICATION" | "APPROVAL";
+export type RequestType = "ABSENCE_REQUEST" | "CLOCKIN_REQUEST";
+export type NotificationType = "EMAIL_NOTIFICATION" | "POPUP_NOTIFICATION";
+
+export type Process = Request | Approval | Notification;
+
 export type FlowDefinition = {
-  id: string;
+  id?: string;
   title: string;
   description: string;
   processes: Process[];
-  flowInstances: FlowInstance[];
-  updatedAt: Date;
+  flowInstances?: FlowInstance[];
+  updatedAt?: Date;
 };
 
-export type Status = 'PENDING' | 'ACTIVE' | 'SUCCESS' | 'FAILURE' | 'PAUSED'
-
-export type RequestType = 'ABSENCE_REQUEST'
+export type FlowDefinitionPayload = {
+  title: string;
+  description: string;
+  processes: Process[];
+};
 
 export type FlowInstance = {
   id: string;
-  flowDefinition: FlowDefinition;
+  flowDefinitionId: string;
   title: string;
   flowStatus: Status;
   currentProcess: Process;
+  step: number;
+  processes: Process[];
   updatedAt: Date;
+  flowDefinition?: FlowDefinition | null;
 };
 
-export type TriggerType = 'MANUAL' | 'POST'
-
-export type Trigger = {
-  id: string;
-  type: TriggerType;
-}
-
-export type Process = {
-  id: string;
-  processType: string;
+type ProcessBase = {
+  id?: string;
   name: string;
+};
+
+export type Request = ProcessBase & {
+  processType: "REQUEST";
+  requestTypeName: RequestType;
+  approvable: boolean;
+  minApprovals: number;
+  approvableBy: string[];
+};
+
+export type Approval = ProcessBase & {
+  processType: "APPROVAL";
+};
+
+export type Notification = ProcessBase & {
+  processType: "NOTIFICATION";
+  notificationType: NotificationType;
 };
 
 export type AbsenceData = {
@@ -39,8 +61,8 @@ export type AbsenceData = {
     endDate: Date;
     submittedBy: string;
     reason: string;
-  }
-}
+  };
+};
 
 export type RequestSubmission = {
   id: string;
@@ -50,10 +72,9 @@ export type RequestSubmission = {
   submittedAt: Date;
   processedAt: Date;
   flowInstanceId: string;
-}
+};
 
-export type FlowDefinitionPayload = {
-  title: string;
-  description: string;
-  processes: string[];
+export type User = {
+  name: string;
+  email: string;
 };

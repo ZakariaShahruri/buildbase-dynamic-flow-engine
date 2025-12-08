@@ -2,6 +2,7 @@
 import { ref, computed, watch } from "vue";
 import { VueFlow, useVueFlow, MarkerType } from "@vue-flow/core";
 import type { Process } from "../../types";
+import { useThemeStore } from "../../stores/themeStore";
 
 const props = withDefaults(
   defineProps<{
@@ -28,10 +29,36 @@ const nodes = computed(() => {
       return;
     }
 
-    // we can simplify at the end
-    const nodeId = `process-${index}-${process.id || index}`;
-    const label = (process as any).name || process.name || "Unnamed Process";
-    const processType = (process as any).processType || process.name;
+    const nodeId = process.id || `process-${index}`;
+    const processType = process.processType;
+
+    let label = process.name;
+
+    if (!label || label.trim() === "") {
+      if (process.processType === "REQUEST") {
+        const requestTypeName = process.requestTypeName;
+        if (requestTypeName === "ABSENCE_REQUEST") {
+          label = "Absence Request";
+        } else if (requestTypeName === "CLOCKIN_REQUEST") {
+          label = "Clock-In Request";
+        } else {
+          label = "Request Process";
+        }
+      } else if (process.processType === "APPROVAL") {
+        label = "Approval Process";
+      } else if (process.processType === "NOTIFICATION") {
+        const notificationType = process.notificationType;
+        if (notificationType === "EMAIL_NOTIFICATION") {
+          label = "Email Notification";
+        } else if (notificationType === "POPUP_NOTIFICATION") {
+          label = "Popup Notification";
+        } else {
+          label = "Notification Process";
+        }
+      } else {
+        label = "Unnamed Process";
+      }
+    }
 
     const isFirst = index === 0;
     const isLast = index === props.processes.length - 1;
@@ -63,8 +90,8 @@ const edges = computed(() => {
       continue;
     }
 
-    const currentId = `process-${i}-${currentProcess.id || i}`;
-    const nextId = `process-${i + 1}-${nextProcess.id || i + 1}`;
+    const currentId = currentProcess.id || `process-${i}`; // it should change after backend processes update
+    const nextId = nextProcess.id || `process-${i + 1}`;
 
     result.push({
       id: `e-${currentId}-${nextId}`,
@@ -83,6 +110,9 @@ const vueFlowEdges = ref(edges.value);
 
 const { fitView } = useVueFlow();
 
+const themeStore = useThemeStore();
+const isDarkMode = computed(() => themeStore.isDarkMode);
+
 watch([nodes, edges], ([newNodes, newEdges]) => {
   vueFlowNodes.value = newNodes;
   vueFlowEdges.value = newEdges;
@@ -96,7 +126,10 @@ watch([nodes, edges], ([newNodes, newEdges]) => {
 </script>
 
 <template>
-  <div class="flow-diagram-container">
+  <div
+    class="flow-diagram-container"
+    :class="{ 'flow-diagram-container--dark': isDarkMode }"
+  >
     <VueFlow
       :nodes="vueFlowNodes"
       :edges="vueFlowEdges"
@@ -119,6 +152,11 @@ watch([nodes, edges], ([newNodes, newEdges]) => {
   border: 1px solid #e5e7eb;
   border-radius: 0.375rem;
   background-color: #fafafa;
+}
+
+.flow-diagram-container--dark {
+  background-color: #181a1b;
+  border-color: #2c2f31;
 }
 
 .flow-diagram {

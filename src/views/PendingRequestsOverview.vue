@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import FlowTypeCreation from '../components/flows/FlowTypeCreation.vue';
+  import PendingRequests from '../components/requests/PendingRequests.vue';
   import { ref } from 'vue';
   import router from '../router';
 
@@ -13,8 +13,9 @@
   if (user.value?.role == "User") {
     router.push({ name: "Home" });
   }
+
 </script>
 
 <template>
-  <FlowTypeCreation :is-definition="true"/>
+  <PendingRequests />
 </template>
