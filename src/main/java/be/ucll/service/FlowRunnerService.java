@@ -4,6 +4,8 @@ import be.ucll.exception.ServiceException;
 import be.ucll.model.*;
 import be.ucll.model.Process;
 import be.ucll.model.enums.FlowStatus;
+import be.ucll.model.enums.RequestStatus;
+import be.ucll.model.enums.RequestTypeEnum;
 import be.ucll.repository.FlowDefinitionRepository;
 import be.ucll.repository.FlowInstanceRepository;
 
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import be.ucll.controller.dto.FlowData;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class FlowRunnerService {
@@ -26,19 +29,42 @@ public class FlowRunnerService {
     @Autowired
     private RequestService requestService;
 
-    public void instantiateFlow(String id, FlowData flowData){
+    @Autowired
+    private NotificationService notificationService;
 
-        FlowDefinition fd =  flowDefinitionRepository.findById(id)
-            .orElseThrow(()-> new ServiceException("Flow id does not exist"));
+    @Autowired
+    private TriggerService triggerService;
 
-        FlowInstance flowInstance = new FlowInstance(fd, flowData.title(), flowData.data());
-        flowInstance = flowInstanceRepository.save(flowInstance);
-        runFlow(flowInstance);
+
+    public void instantiateFlow(String id, String url, FlowData flowData){
+        try{
+            FlowDefinition fd =  flowDefinitionRepository.findById(id)
+                .orElseThrow(()-> new ServiceException("Flow id does not exist"));
+
+            if (!fd.isAnyTrigger() && !fd.getTriggerableBy().contains(flowData.triggeredBy())) {
+                throw new ServiceException("Flow is not triggerable by " + flowData.triggeredBy());
+            }
+
+            FlowInstance flowInstance = new FlowInstance(fd, 
+                    flowData.title(), 
+                    flowData.triggeredBy(), 
+                    flowData.data(),
+                    url);
+
+            flowInstance = flowInstanceRepository.save(flowInstance);
+            triggerService.SendCallback(url, flowInstance.getId());
+
+            runFlow(flowInstance);
+
+        }catch(Exception e){
+            triggerService.SendCallback(url, "");
+            throw e;
+        }
     }
 
     private void runFlow(FlowInstance flowInstance){
         try{
-            Map<String, Map<String, Object>> data = flowInstance.getData();
+            Map<RequestTypeEnum, Map<String, Object>> data = flowInstance.getData();
 
             while (flowInstance.getCurrentProcess() != null) {
                 Process current = flowInstance.getCurrentProcess();
@@ -46,27 +72,50 @@ public class FlowRunnerService {
 
                 switch (current) {
                     case Request request -> {
-                        requestService.processRequest(
+                        RequestSubmission submission = requestService.processRequest(
                                 request,
                                 data.get(request.getRequestTypeName())); 
+
+                        if (submission.isApprovable() && 
+                                submission.getStatus() == RequestStatus.PENDING){
+                            flowInstance.addSubmission(submission);
+                        }
+
+                        break;
                     }
                     case Approval approval -> {
+
+                        Set<Integer> requestStepsApproval = approval.getRequestSteps();
+                        // Checks if the approval's mapped request has been submitted
+                        boolean shouldWait = flowInstance.getSubmissions()
+                            .stream()
+                            .anyMatch(rq -> requestStepsApproval.contains(rq.getRequestStep() ));
+
+                        // wait only if the assigned request is submitted
+                        if (!shouldWait) break;
+
                         updateFlowStatus(flowInstance, FlowStatus.PENDING);
                         return;
                     }
                     case Notification notification -> {
-                        //TODO: Notify in NotificationService
+                        int requestStep = notification.getRequestStep();
+                        Request rq = (Request) flowInstance.getProcesses()
+                            .get(requestStep);
+
+                        notification.setRequest(rq);
+                        notificationService.sendNotification(notification);
+                        break;
                     }
                     default -> { break; }
                 }
 
                 flowInstance.nextProcess();
                 flowInstance.setUpdatedAt(LocalDateTime.now());
-                flowInstanceRepository.save(flowInstance);
+                flowInstanceRepository.save(flowInstance); 
             }
 
-            flowInstance.setFlowStatus(FlowStatus.SUCCESS);
-            flowInstanceRepository.save(flowInstance);
+            updateFlowStatus(flowInstance, FlowStatus.SUCCESS);
+            triggerService.SendCallback(flowInstance.getCallingURL(), flowInstance.getId());
 
             //TODO: Send FlowInstance back to Calling URL
         } catch(Exception e) {
@@ -83,10 +132,18 @@ public class FlowRunnerService {
             throw new ServiceException("Flow is not PENDING");
         }
 
+        // Update Submissions
+        flowInstance.getSubmissions()
+            .removeAll(
+                    flowInstance.getSubmissions().stream()
+                    .filter(rq -> rq.getStatus() != RequestStatus.PENDING)
+                    .toList());
+
         flowInstance.nextProcess();
         flowInstance.setFlowStatus(FlowStatus.ACTIVE);
         flowInstance.setUpdatedAt(LocalDateTime.now());
         flowInstanceRepository.save(flowInstance); 
+
         runFlow(flowInstance);
     }
 

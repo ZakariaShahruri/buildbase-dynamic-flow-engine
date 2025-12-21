@@ -2,6 +2,7 @@ package be.ucll.model;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import be.ucll.exception.DomainException;
 import be.ucll.model.enums.FlowStatus;
+import be.ucll.model.enums.RequestTypeEnum;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -27,40 +29,58 @@ public class FlowInstance {
     private String title;
 
     @NotNull
-    @JsonIgnore
+    private String triggeredBy;
+
+    @NotNull
+    private String callingURL;
+
+    @NotNull @JsonIgnore
     private FlowDefinition flowDefinition;
 
     @NotNull
     private FlowStatus flowStatus;
 
-    private Map<String, Map<String, Object>> data = new HashMap<>();
+    @JsonIgnore
+    private List<RequestSubmission> submissions = new ArrayList<>();
+
+    private Map<RequestTypeEnum, Map<String, Object>> data = new HashMap<>();
 
     private int step;
     private LocalDateTime updatedAt;
 
-    public FlowInstance(FlowDefinition flowDefinition, String title, Map<String, Map<String, Object>> data) {
+    public FlowInstance(FlowDefinition flowDefinition, String title, String triggeredBy, Map<RequestTypeEnum, Map<String, Object>> data, String callingURL) {
         step = 0;
         setFlowDefinition(flowDefinition);
         setTitle(title);
+        setTriggeredBy(triggeredBy);
+        setCallingURL(callingURL);
         setFlowStatus(FlowStatus.ACTIVE);
         setUpdatedAt(LocalDateTime.now());
         this.data = data;
     }
 
-    public String getId() {
-        return id.toString();
+    public String getId() { 
+        return id; 
     }
 
-    public String getTitle() {
-        return title;
+    public String getTitle() { 
+        return title; 
     }
 
-    public Map<String, Map<String, Object>> getData() {
-        return data;
+    public String getTriggeredBy() { 
+        return triggeredBy; 
+    }
+
+    public String getCallingURL() {
+        return callingURL;
     }
 
     public String getFlowDefinitionId() {
         return flowDefinition.getId();
+    }
+
+    public Map<RequestTypeEnum, Map<String, Object>> getData() {
+        return data;
     }
 
     public FlowStatus getFlowStatus() {
@@ -71,16 +91,20 @@ public class FlowInstance {
         return step;
     }
 
+    public List<RequestSubmission> getSubmissions() {
+        return submissions;
+    }
+
     public List<Process> getProcesses() {
         return flowDefinition.getProcesses();
     }
 
     public Process getCurrentProcess() {
-        if(step >= flowDefinition.getProcesses().size()){
+        if(step >= getProcesses().size()){
             return null;
         }
 
-        return flowDefinition.getProcesses().get(step);
+        return getProcesses().get(step);
     }
 
     public LocalDateTime getCreatedAt() {
@@ -97,9 +121,7 @@ public class FlowInstance {
         return updatedAt;
     }
 
-    public void nextProcess(){
-        step++;
-    }
+    public void nextProcess() { step++; }
 
     private void setFlowDefinition(FlowDefinition flowDefinition) {
         if (flowDefinition == null) 
@@ -113,6 +135,18 @@ public class FlowInstance {
             throw new DomainException("FlowInstance Title cannot be empty");
 
         this.title = title;
+    }
+
+    public void addSubmission(RequestSubmission submission) {
+        submissions.add(submission);
+    }
+
+    public void setTriggeredBy(String triggeredBy) {
+        this.triggeredBy = triggeredBy != null? triggeredBy: null;
+    }
+
+    public void setCallingURL(String callingURL) {
+        this.callingURL = callingURL;
     }
 
     public void setFlowStatus(FlowStatus status) {

@@ -2,17 +2,19 @@ package be.ucll.model.strategies.request;
 
 import be.ucll.exception.DomainException;
 import be.ucll.model.*;
+import be.ucll.model.enums.RequestStatus;
+import be.ucll.model.enums.RequestTypeEnum;
 
 import java.time.LocalDate;
 
 public class AbsenceRequestType implements RequestType {
  
     @Override
-    public void validate(RequestData data) {
-        String startDateStr = data.getField("startDate", String.class);
-        String endDateStr = data.getField("endDate", String.class);
-        String submittedBy = data.getField("submittedBy", String.class);
-        String reason = data.getField("reason", String.class);
+    public RequestStatus validate(RequestData data) {
+        String startDateStr = data.getField("Start_Date", String.class);
+        String endDateStr = data.getField("End_Date", String.class);
+        String submittedBy = data.getField("Submitted_By", String.class);
+        String reason = data.getField("Reason", String.class);
 
         LocalDate startDate = LocalDate.parse(startDateStr);
         LocalDate endDate = LocalDate.parse(endDateStr); 
@@ -32,10 +34,12 @@ public class AbsenceRequestType implements RequestType {
         if (submittedBy == null || submittedBy.isBlank()) {
             throw new DomainException("User is required for absence request");
         }
+
+        return RequestStatus.PENDING;
     }
  
     @Override
-    public String getTypeName() {
-        return "ABSENCE_REQUEST";
+    public RequestTypeEnum getTypeName() {
+        return RequestTypeEnum.ABSENCE_REQUEST;
     }
 }

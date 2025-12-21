@@ -1,10 +1,5 @@
 package be.ucll.model;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-
-import org.bson.types.ObjectId;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -33,6 +28,8 @@ public abstract class Process {
     @JsonIgnore
     private String flowInstanceId;
 
+    private int step = 0;
+
     protected Process() {}
 
     public Process(String name, ProcessType processType){ 
@@ -52,6 +49,10 @@ public abstract class Process {
         return processType;
     }
 
+    public int getStep() {
+        return step;
+    }
+
     public void setFlowInstanceId(String flowInstanceId) {
         this.flowInstanceId = flowInstanceId;
     }
@@ -60,12 +61,7 @@ public abstract class Process {
         this.processType = processType;
     }
 
-    public LocalDateTime getCreatedAt() {
-        if (flowInstanceId == null) return null;
-
-        return new ObjectId(flowInstanceId).getDate()
-            .toInstant()
-            .atZone(ZoneOffset.UTC)
-            .toLocalDateTime();
+    public void setStep(int step) {
+        this.step = step;
     }
 }
