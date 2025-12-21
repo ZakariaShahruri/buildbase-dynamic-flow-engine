@@ -3,6 +3,8 @@ import { computed, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import FlowDefinitionService from "../../services/FlowDefinitionService";
 import FlowDiagram from "./FlowDiagram.vue";
+import vSelect from "vue-select";
+import "vue-select/dist/vue-select.css";
 import type {
   NotificationType,
   Process,
@@ -19,10 +21,9 @@ const flowNameError = ref("");
 const descriptionError = ref("");
 const stepsError = ref("");
 const description = ref("");
-
 const steps = ref<Process[]>([]);
-
 const showProcessMenu = ref(false);
+const triggerableBy = ref<string[]>([]);
 
 const addProcess = (processType: ProcessType) => {
   let newProcess: Process;
@@ -35,25 +36,60 @@ const addProcess = (processType: ProcessType) => {
       approvable: false,
       minApprovals: 1,
       approvableBy: [],
+      step: steps.value.length,
     };
   } else if (processType === "APPROVAL") {
     newProcess = {
       processType: "APPROVAL",
+      requestSteps: [],
       name: "",
+      step: steps.value.length + 1,
     };
   } else {
     newProcess = {
       processType: "NOTIFICATION",
       name: "",
       notificationType: "" as NotificationType,
+      toNotify: [],
+      requestStep: undefined,
+      step: steps.value.length + 1,
     };
   }
   steps.value.push(newProcess);
+  renumberSteps();
   showProcessMenu.value = false;
 };
 
 const deleteStep = (index: number) => {
   steps.value.splice(index, 1);
+
+  steps.value.forEach((step) => {
+    if (step.processType === "APPROVAL" && Array.isArray(step.requestSteps)) {
+      step.requestSteps = step.requestSteps
+        .map((reqIndex) => {
+          if (reqIndex === index) return null; 
+          if (reqIndex > index) return reqIndex - 1; 
+          return reqIndex;
+        })
+        .filter((reqIndex): reqIndex is number => reqIndex !== null);
+    }
+
+    if (step.processType === "NOTIFICATION" && typeof step.requestStep === "number") {
+      if (step.requestStep === index) {
+        step.requestStep = undefined; 
+      } else if (step.requestStep > index) {
+        step.requestStep = step.requestStep - 1; 
+      }
+    }
+  });
+  
+  renumberSteps();
+};
+
+const renumberSteps = () => {
+  steps.value.forEach((s, i) => {
+    s.step = i;
+  });
 };
 
 const validateFlowDefinition = (): boolean => {
@@ -158,6 +194,7 @@ const saveFlow = async () => {
   const payload = {
     title: flowName.value,
     description: description.value,
+    triggerableBy: triggerableBy.value,
     processes: steps.value.map((step) => {
       const { id, ...processData } = step;
 
@@ -193,33 +230,16 @@ const saveFlow = async () => {
   router.push("/flow-definitions");
 };
 
-const addApprover = (index: number, email: string) => {
-  if (!email) return;
-
-  const step = steps.value[index];
-  if (step?.processType === "REQUEST") {
-    if (!step.approvableBy.includes(email)) {
-      step.approvableBy.push(email);
-    }
-  }
-};
-
-const removeApprover = (stepIndex: number, emailIndex: number) => {
-  const step = steps.value[stepIndex];
-  if (step?.processType === "REQUEST") {
-    step.approvableBy.splice(emailIndex, 1);
-  }
-};
+const userStore = useUserStore();
+const availableTriggers = computed(() => userStore.users);
+const availableApprovers = computed(() =>
+  userStore.users.filter((user) => user.role === "Manager")
+);
 
 const goBackToFlowDef = () => router.back();
 
 const themeStore = useThemeStore();
 const isDarkMode = computed(() => themeStore.isDarkMode);
-
-const userStore = useUserStore();
-const availableApprovers = computed(() =>
-  userStore.users.filter(user => user.role === "Manager")
-);
 
 const labelTextColor = computed(() =>
   isDarkMode.value ? "text-gray-200" : "text-gray-700"
@@ -326,7 +346,11 @@ watch(
           </div>
 
           <div class="mb-4 w-full">
-            <label class="block text-sm font-bold mb-2" :class="labelTextColor" for="flowDescription">
+            <label
+              class="block text-sm font-bold mb-2"
+              :class="labelTextColor"
+              for="flowDescription"
+            >
               Description
             </label>
             <textarea
@@ -344,6 +368,36 @@ watch(
             ></textarea>
             <p v-if="descriptionError" class="text-red-600 text-sm mt-1">
               {{ descriptionError }}
+            </p>
+          </div>
+
+          <div class="mb-6 w-full">
+            <label
+              for="flowTriggers"
+              class="block text-sm font-bold mb-2"
+              :class="labelTextColor"
+            >
+              Triggerable By
+            </label>
+
+            <v-select
+              v-model="triggerableBy"
+              :options="availableTriggers"
+              label="name"
+              :reduce="(user: any) => user.email"
+              placeholder="Search and select users..."
+              multiple
+            >
+              <template #option="{ name, email, role }">
+                <div class="flex justify-between items-center">
+                  <span>{{ name }} ({{ email }})</span>
+                  <span class="text-xs opacity-75">{{ role }}</span>
+                </div>
+              </template>
+            </v-select>
+
+            <p class="text-xs text-gray-500 mt-2">
+              If no users are selected, anyone can trigger this flow
             </p>
           </div>
         </form>
@@ -434,20 +488,17 @@ watch(
                 >
                   Request Type
                 </label>
-                <select
-                  id="flowRequestType"
+                <v-select
                   v-model="step.requestTypeName"
-                  class="shadow border rounded w-full py-2 px-3 transition-colors duration-200 cursor-pointer"
-                  :class="[
-                    isDarkMode
-                      ? 'bg-[#1c1e1f] border-[#2c2f31] text-white'
-                      : 'bg-white border-gray-300 text-gray-700',
+                  :options="[
+                    { label: 'Absence Request', value: 'ABSENCE_REQUEST' },
+                    { label: 'Clock-In Request', value: 'CLOCKIN_REQUEST' },
                   ]"
-                >
-                  <option value="">Select request type</option>
-                  <option value="ABSENCE_REQUEST">Absence Request</option>
-                  <option value="CLOCKIN_REQUEST">Clock-In Request</option>
-                </select>
+                  :reduce="(option: any) => option.value"
+                  label="label"
+                  placeholder="Select request type..."
+                  :clearable="false"
+                />
               </div>
 
               <div class="mb-4 flex items-center">
@@ -456,7 +507,11 @@ watch(
                   type="checkbox"
                   :id="`approvable-${index}`"
                   class="mr-2 h-5 w-5 cursor-pointer border rounded-md appearance-none transition-colors checked:bg-sidebarprimary"
-                  :class="isDarkMode ? 'bg-[#181a1b] border-[#2c2f31]' : 'bg-gray-50 bg-gray-200'"
+                  :class="
+                    isDarkMode
+                      ? 'bg-[#181a1b] border-[#2c2f31]'
+                      : 'bg-gray-50 bg-gray-200'
+                  "
                 />
                 <label
                   :for="`approvable-${index}`"
@@ -497,67 +552,52 @@ watch(
                     class="block text-sm font-bold mb-2"
                     :class="labelTextColor"
                   >
-                    Approvers (Email Addresses)
+                    Approvers
                   </label>
 
-                  <select
-                    id="flowApprovers"
-                    class="shadow border rounded w-full py-2 px-3 mb-2 transition-colors duration-200 cursor-pointer"
-                    :class="[
-                      isDarkMode
-                        ? 'bg-[#1c1e1f] border-[#2c2f31] text-white'
-                        : 'bg-white border-gray-300 text-gray-700',
-                    ]"
-                    @change="
-                      (e) => {
-                        const target = e.target as HTMLSelectElement;
-                        addApprover(index, target.value);
-                        target.value = '';
-                      }
-                    "
+                  <v-select
+                    v-model="step.approvableBy"
+                    :options="availableApprovers"
+                    label="name"
+                    :reduce="(user: any) => user.email"
+                    placeholder="Search and select approvers..."
+                    multiple
                   >
-                    <option value="">Select approver to add</option>
-                    <option
-                      v-for="approver in availableApprovers"
-                      :key="approver.email"
-                      :value="approver.email"
-                    >
-                      {{ approver.name }} ({{ approver.email }})
-                    </option>
-                  </select>
-
-                  <div v-if="step.approvableBy && step.approvableBy.length > 0">
-                    <div
-                      v-for="(email, emailIndex) in step.approvableBy"
-                      :key="emailIndex"
-                      class="flex items-center justify-between px-3 py-2 rounded"
-                      :class="isDarkMode ? 'bg-[#1c1e1f]' : 'bg-gray-100'"
-                    >
-                      <span class="text-sm">{{ email }}</span>
-                      <button
-                        @click="removeApprover(index, emailIndex)"
-                        type="button"
-                        class="flex items-center gap-1 text-red-500 hover:text-red-700 text-sm font-semibold cursor-pointer"
-                      >
-                        <svg
-                          class="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                        <span>Remove</span>
-                      </button>
-                    </div>
-                  </div>
+                    <template #option="{ name, email, role }">
+                      <div class="flex justify-between items-center">
+                        <span>{{ name }} ({{ email }})</span>
+                        <span class="text-xs opacity-75">{{ role }}</span>
+                      </div>
+                    </template>
+                  </v-select>
                 </div>
               </template>
+            </template>
+
+            <template v-if="step.processType === 'APPROVAL'">
+              <div class="mb-4">
+                <label
+                  for="flowApprovalTargets"
+                  class="block text-sm font-bold mb-2"
+                  :class="labelTextColor"
+                >
+                  Select Request Process(es) to Approve
+                </label>
+
+                <v-select
+                  v-model="step.requestSteps"
+                  :options="steps
+                    .filter((p, i) => p.processType === 'REQUEST' && i < index)
+                    .map(p => ({ label: p.name || 'Request Process', value: p.step }))"
+                  label="label"
+                  :reduce="(option: any) => option.value"
+                  placeholder="Select request processes to approve..."
+                  multiple
+                />
+                <p class="text-xs text-gray-500 mt-2">
+                  Choose one or more request processes that this approval will handle.
+                </p>
+              </div>
             </template>
 
             <template v-if="step.processType === 'NOTIFICATION'">
@@ -569,20 +609,75 @@ watch(
                 >
                   Notification Type
                 </label>
-                <select
-                  id="flowNotificationType"
+                <v-select
                   v-model="step.notificationType"
-                  class="shadow border rounded w-full py-2 px-3 transition-colors duration-200 cursor-pointer"
-                  :class="[
-                    isDarkMode
-                      ? 'bg-[#1c1e1f] border-[#2c2f31] text-white'
-                      : 'bg-white border-gray-300 text-gray-700',
+                  :options="[
+                    {
+                      label: 'Email Notification',
+                      value: 'EMAIL_NOTIFICATION',
+                    },
+                    {
+                      label: 'Popup Notification',
+                      value: 'POPUP_NOTIFICATION',
+                    },
                   ]"
+                  :reduce="(option: any) => option.value"
+                  label="label"
+                  placeholder="Select notification type..."
+                  :clearable="false"
+                />
+              </div>
+
+              <div class="mb-4">
+                <label
+                  for="flowNotificationUsers"
+                  class="block text-sm font-bold mb-2"
+                  :class="labelTextColor"
                 >
-                  <option value="">Select notification type</option>
-                  <option value="EMAIL_NOTIFICATION">Email Notification</option>
-                  <option value="POPUP_NOTIFICATION">Popup Notification</option>
-                </select>
+                  Select User(s) to Notify
+                </label>
+
+                <v-select
+                  v-model="step.toNotify"
+                  :options="availableTriggers"
+                  label="name"
+                  :reduce="(user: any) => user.email"
+                  placeholder="Search and select users to notify..."
+                  multiple
+                >
+                  <template #option="{ name, email, role }">
+                    <div class="flex justify-between items-center">
+                      <span>{{ name }} ({{ email }})</span>
+                      <span class="text-xs opacity-75">{{ role }}</span>
+                    </div>
+                  </template>
+                </v-select>
+                <p class="text-xs text-gray-500 mt-2">
+                  Leave empty to use default notification recipients.
+                </p>
+              </div>
+
+              <div class="mb-4">
+                <label
+                  for="flowNotificationTargets"
+                  class="block text-sm font-bold mb-2"
+                  :class="labelTextColor"
+                >
+                  Select Request Process to Approve
+                </label>
+
+                <v-select
+                  v-model="step.requestStep"
+                  :options="steps
+                    .filter((p, i) => p.processType === 'REQUEST' && i < index)
+                    .map(p => ({ label: p.name || 'Request Process', value: p.step }))"
+                  label="label"
+                  :reduce="(option: any) => option.value"
+                  placeholder="Select a request process to approve..."
+                />
+                <p class="text-xs text-gray-500 mt-2">
+                  Choose the request process this notification will relate to.
+                </p>
               </div>
             </template>
           </div>

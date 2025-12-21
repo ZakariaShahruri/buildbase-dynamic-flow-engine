@@ -13,11 +13,14 @@ export type FlowDefinition = {
   processes: Process[];
   flowInstances?: FlowInstance[];
   updatedAt?: Date;
+  triggerableBy: string[];
+  anyTrigger: boolean;
 };
 
 export type FlowDefinitionPayload = {
   title: string;
   description: string;
+  triggerableBy: string[];
   processes: Process[];
 };
 
@@ -31,11 +34,14 @@ export type FlowInstance = {
   processes: Process[];
   updatedAt: Date;
   flowDefinition?: FlowDefinition | null;
+  triggeredBy: string;
+  callingURL: string;
 };
 
 type ProcessBase = {
   id?: string;
   name: string;
+  step?: number;
 };
 
 export type Request = ProcessBase & {
@@ -48,12 +54,25 @@ export type Request = ProcessBase & {
 
 export type Approval = ProcessBase & {
   processType: "APPROVAL";
+  requestSteps: number[];
 };
 
 export type Notification = ProcessBase & {
   processType: "NOTIFICATION";
   notificationType: NotificationType;
+  toNotify?: string[];
+  requestStep?: number;
 };
+
+export type ClockInData = {
+  allFields: {
+    startTime: Date;
+    endTime: Date;
+    date: Date;
+    submittedBy: string;
+  };
+};
+
 
 export type AbsenceData = {
   allFields: {
@@ -66,9 +85,13 @@ export type AbsenceData = {
 
 export type RequestSubmission = {
   id: string;
-  requestType: RequestType;
+  requestTypeName: RequestType;
   status: Status;
-  data: AbsenceData;
+  data: {
+    allFields: {
+      [key: string]: any;
+    }
+  };
   submittedAt: Date;
   processedAt: Date;
   flowInstanceId: string;
