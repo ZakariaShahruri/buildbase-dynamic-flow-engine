@@ -5,13 +5,19 @@
 ![Vue.js](https://img.shields.io/badge/Vue.js-3.x-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
-![Java](https://img.shields.io/badge/Java-JDK_25-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Java](https://img.shields.io/badge/Java-JDK_21_LTS-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
 
 *A flexible, enterprise-grade workflow automation engine built for BuildBase (Strouwi BV)*
 
 </div>
+
+---
+
+> 📌 **Portfolio Demo Note**
+> 
+> I *(Zakaria Shahruri)* have adapted this repository from its original BuildBase enterprise configuration to use a free MongoDB Atlas cloud cluster. This ensures the engine can be easily run and demonstrated as a standalone portfolio piece, without requiring access to the original internal company infrastructure.
 
 ---
 
@@ -39,7 +45,7 @@ The engine features visual flow mapping, real-time state tracking, and WebSocket
 | Layer | Technologies |
 |---|---|
 | **Frontend** | Vue.js, TypeScript, Tailwind CSS |
-| **Backend** | Java (JDK 25), Spring Boot, WebSockets, Maven |
+| **Backend** | Java (JDK 21 LTS), Spring Boot, WebSockets, Maven |
 | **Database** | MongoDB (Atlas) |
 | **Deployment** | OKD Environment |
 | **Architecture** | Monorepo (managed via Concurrently) |
@@ -60,14 +66,34 @@ buildbase-dynamic-flow-engine/
 
 ---
 
-## Quick Start (Development)
+## Quick Start (Docker) — Recommended
+
+If you have [Docker](https://www.docker.com/products/docker-desktop/) installed, you can run the entire stack with a single command — no Node, Java, or Maven setup required.
+
+```bash
+# Clone the repository
+git clone https://github.com/<your-username>/buildbase-dynamic-flow-engine.git
+cd buildbase-dynamic-flow-engine
+
+# Configure your environment variables (see Step 1 below)
+
+# Build and start all services
+docker-compose up --build
+```
+
+> **Spring Boot API** → `http://localhost:8080`  
+> **Vue.js dev server** → `http://localhost:5173`
+
+---
+
+## Quick Start (Manual Development)
 
 ### Prerequisites
 
 Ensure the following are installed before running the project locally:
 
 - [Node.js & npm](https://nodejs.org/)
-- [Java JDK 17+](https://adoptium.net/)
+- [Java JDK 21 LTS](https://adoptium.net/)
 - [Maven](https://maven.apache.org/)
 
 ---
