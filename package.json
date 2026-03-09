@@ -1,0 +1,31 @@
+{
+  "name": "buildbase-dynamic-flow-engine",
+  "version": "1.0.0",
+  "description": "A flexible Dynamic Flow Engine built for BuildBase (Strouwi BV)",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "cd backend && ./mvnw spring-boot:run",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZakariaShahruri/buildbase-dynamic-flow-engine.git"
+  },
+  "keywords": [
+    "vue",
+    "spring-boot",
+    "mongodb",
+    "monorepo"
+  ],
+  "author": "Zakaria Shahruri & GlacKIT Team",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ZakariaShahruri/buildbase-dynamic-flow-engine/issues"
+  },
+  "homepage": "https://github.com/ZakariaShahruri/buildbase-dynamic-flow-engine#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
